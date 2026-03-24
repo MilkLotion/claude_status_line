@@ -25,10 +25,6 @@ def get_indicator(pct):
     return "🔴"
 
 
-def format_number(n):
-    """Format integer with comma separators."""
-    return f"{n:,}"
-
 
 def format_statusline(data):
     """Build statusline from Claude Code's stdin JSON."""
@@ -70,18 +66,15 @@ def format_statusline(data):
         parts.append(f"⏱️ {eh}h {em}m")
         parts.append(f"⏳ {rh}h {rm}m")
 
-    # ── Context Window & Session Usage ──
+    # ── Context Window ──
     ctx = data.get("context_window", {})
-    total_input = ctx.get("total_input_tokens", 0)
-    total_output = ctx.get("total_output_tokens", 0)
-    total_tokens = total_input + total_output
     ctx_pct = ctx.get("used_percentage")
 
     if ctx_pct is not None:
-        parts.append(f"📋 context {int(ctx_pct)}% ( 🔥 {format_number(total_tokens)} token )")
+        parts.append(f"📋 context {int(ctx_pct)}%")
 
     if five_hour_pct is not None:
-        parts.append(f"📊 usage {five_hour_pct:.1f}% ( 🔥 {format_number(total_tokens)} token )")
+        parts.append(f"📊 usage {five_hour_pct:.1f}%")
 
     # ── Cost ──
     cost = data.get("cost", {})
