@@ -70,21 +70,18 @@ def format_statusline(data):
         parts.append(f"⏱️ {eh}h {em}m")
         parts.append(f"⏳ {rh}h {rm}m")
 
-    # ── Context Window ──
+    # ── Context Window & Session Usage ──
     ctx = data.get("context_window", {})
     total_input = ctx.get("total_input_tokens", 0)
     total_output = ctx.get("total_output_tokens", 0)
     total_tokens = total_input + total_output
     ctx_pct = ctx.get("used_percentage")
 
-    token_str = f"🔥 {format_number(total_tokens)} tokens"
     if ctx_pct is not None:
-        token_str += f" (ctx {int(ctx_pct)}%)"
-    parts.append(token_str)
+        parts.append(f"📋 context {int(ctx_pct)}% ( 🔥 {format_number(total_tokens)} token )")
 
-    # ── 5-hour usage percentage ──
     if five_hour_pct is not None:
-        parts.append(f"📊 {five_hour_pct:.1f}%")
+        parts.append(f"📊 usage {five_hour_pct:.1f}% ( 🔥 {format_number(total_tokens)} token )")
 
     # ── Cost ──
     cost = data.get("cost", {})
