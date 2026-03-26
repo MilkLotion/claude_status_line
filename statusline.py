@@ -65,25 +65,22 @@ def format_statusline(data):
         parts.append(f"{indicator}  {start_str} ~ {end_str}")
         parts.append(f"⏱️ {eh}h {em}m")
         parts.append(f"⏳ {rh}h {rm}m")
+    else:
+        parts.append(f"⚪  -")
+        parts.append(f"⏱️ -")
+        parts.append(f"⏳ -")
 
     # ── Context Window ──
     ctx = data.get("context_window", {})
     ctx_pct = ctx.get("used_percentage")
+    parts.append(f"📋 context {int(ctx_pct)}%" if ctx_pct is not None else "📋 context -")
 
-    if ctx_pct is not None:
-        parts.append(f"📋 context {int(ctx_pct)}%")
-
-    if five_hour_pct is not None:
-        parts.append(f"📊 usage {five_hour_pct:.1f}%")
+    parts.append(f"📊 usage {five_hour_pct:.1f}%" if five_hour_pct is not None else "📊 usage -")
 
     # ── Cost ──
     cost = data.get("cost", {})
     total_cost = cost.get("total_cost_usd", 0)
-    if total_cost:
-        parts.append(f"💰 ${total_cost:.2f}")
-
-    if not parts:
-        return f"⚪ [{model_name}] waiting..."
+    parts.append(f"💰 ${total_cost:.2f}" if total_cost else "💰 -")
 
     return f"[{model_name}]  " + " | ".join(parts)
 
