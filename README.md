@@ -46,9 +46,10 @@ Claude Code settings 파일에 추가 (`~/.claude/settings.json`):
 
 ```json
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "statusLine": {
     "type": "command",
-    "command": "python3 C:\\Users\\<username>\\.claude\\statusline.py",
+    "command": "python C:/Users/<username>/.claude/statusline.py",
     "padding": 0
   }
 }
@@ -58,6 +59,7 @@ Claude Code settings 파일에 추가 (`~/.claude/settings.json`):
 
 ```json
 {
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
   "statusLine": {
     "type": "command",
     "command": "python3 <user_path>/.claude/statusline.py",
