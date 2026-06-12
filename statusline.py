@@ -6,6 +6,8 @@ Reads session data from Claude Code's built-in stdin JSON.
 No external dependencies required.
 """
 import json
+import os
+import subprocess
 import sys
 import io
 from datetime import datetime, timedelta
@@ -24,6 +26,29 @@ def get_indicator(pct):
         return "🟠"
     return "🔴"
 
+
+def get_git_branch(cwd):
+    """Get current git branch name, or empty string if not in a repo."""
+    try:
+        result = subprocess.run(
+            ["git", "-C", cwd, "symbolic-ref", "--short", "HEAD"],
+            capture_output=True,
+            text=True,
+            timeout=2,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip()
+    except Exception:
+        pass
+    return ""
+
+
+def build_dir_segment(cwd):
+    """현재 작업 디렉토리 이름과 git 브랜치만 표시."""
+    dir_name = os.path.basename(cwd.replace("\\", "/").rstrip("/")) or cwd
+    branch = get_git_branch(cwd)
+    branch_str = f" ({branch})" if branch else ""
+    return f"{dir_name}{branch_str}"
 
 
 def format_statusline(data):
@@ -66,9 +91,9 @@ def format_statusline(data):
         parts.append(f"⏱️ {eh}h {em}m")
         parts.append(f"⏳ {rh}h {rm}m")
     else:
-        parts.append(f"⚪  -")
-        parts.append(f"⏱️ -")
-        parts.append(f"⏳ -")
+        parts.append("⚪  -")
+        parts.append("⏱️ -")
+        parts.append("⏳ -")
 
     # ── Context Window ──
     ctx = data.get("context_window", {})
@@ -82,7 +107,15 @@ def format_statusline(data):
     total_cost = cost.get("total_cost_usd", 0)
     parts.append(f"💰 ${total_cost:.2f}" if total_cost else "💰 -")
 
-    return f"[{model_name}]  " + " | ".join(parts)
+    # ── 디렉토리 세그먼트 ──
+    cwd = (
+        data.get("workspace", {}).get("current_dir")
+        or data.get("cwd")
+        or os.getcwd()
+    )
+    dir_segment = build_dir_segment(cwd)
+
+    return f"{dir_segment}  [{model_name}]  " + " | ".join(parts)
 
 
 def main():

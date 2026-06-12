@@ -1,14 +1,17 @@
-# ccusage Status Line for Claude Code
+# Status Line for Claude Code
 
-Claude Code의 활성 블록 정보를 표시하는 커스텀 상태줄입니다.  
-해당 코드는 Claude Pro 요금제를 사용하는 기준으로 작성되었습니다.
+Claude Code의 활성 블록(5시간) 정보와 컨텍스트·사용량·비용을 표시하는 커스텀 상태줄입니다.  
+해당 코드는 Claude Pro 요금제를 사용하는 기준으로 작성되었습니다.  
+외부 의존성 없이, Claude Code가 stdin 으로 전달하는 JSON 만으로 동작합니다.
 
 ## Features / 기능
 
-- ⏰ **Time Tracking**: 세션블록의 시작시간, 종료시간, 사용시간, 남은시간을 출력
-- 🔥 **Token Usage**: 사용 토큰 수와 퍼센트수치를 표기
-- 🟢🟠🔴 **Usage Alerts**: 토큰사용량 별 경고 인디케이터 (green/orange/red)
-- 💰 **Cost**: 실시간 사용 비용
+- 📂 **Directory & Branch**: 현재 작업 디렉토리 이름과 git 브랜치 표시
+- ⏰ **Time Tracking**: 5시간 블록의 시작/종료 시간, 사용 시간, 남은 시간 출력
+- 📋 **Context Window**: 컨텍스트 윈도우 사용률(%) 표기
+- 📊 **Usage**: 5시간 레이트 리밋 사용률(%) 표기
+- 🟢🟠🔴 **Usage Alerts**: 사용량 별 경고 인디케이터 (green/orange/red)
+- 💰 **Cost**: 실시간 세션 사용 비용
 
 ## Prerequisites / 필수 요구사항
 
@@ -20,15 +23,15 @@ Claude Code의 활성 블록 정보를 표시하는 커스텀 상태줄입니다
 ### 1. Repository 복사
 
 ```bash
-git clone https://github.com/MilkLotion/ccusage_status_line.git
-cd ccusage_status_line
+git clone https://github.com/MilkLotion/claude_status_line.git
+cd claude_status_line
 ```
 
 ### 2. `statusline.py`를 `.claude` 디렉토리로 복사/이동
 
 #### Windows (PowerShell)
 
-```bash
+```powershell
 Copy-Item statusline.py "$env:USERPROFILE\.claude\"
 ```
 
@@ -73,15 +76,18 @@ Claude Code를 재시작 하고 동작 시에 해당 출력을 확인할 수 있
 ## Output Format / 출력 형식
 
 ```
-Session Block Info  🟢  2025-11-14 12:00 AM ~ 5:00 AM | ⏱️ 1h 1m | ⏳ 3h 59m | 🔥 7,275,167 tokens (33.4%) | 💰 $4.60
+claude_status_line (main)  [Opus 4.8 (1M context)]  🟢  2026-06-13 02:40 AM ~ 07:40 AM | ⏱️ 0h 12m | ⏳ 4h 47m | 📋 context 9% | 📊 usage 0.0% | 💰 $1.45
 ```
 
+- 📂 현재 작업 디렉토리 이름 + git 브랜치
+- `[모델명]` 현재 사용 중인 모델
 - 🟢/🟠/🔴 사용량 인디케이터 (≤60% / 60-80% / >80%)
 - 시작시간 ~ 종료시간
 - ⏱️ 사용시간
-- ⏳ 남은시간(총 5 시간)
-- 🔥 토큰 사용량 (% 수치)
-- 💰 사용 코스트
+- ⏳ 남은시간 (총 5시간)
+- 📋 컨텍스트 윈도우 사용률
+- 📊 5시간 블록 사용률
+- 💰 세션 사용 비용
 
 ## License
 
