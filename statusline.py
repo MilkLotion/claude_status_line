@@ -58,9 +58,13 @@ def format_statusline(data):
 
     parts = []
 
-    # ── Model ──
+    # ── Model + Effort ──
     model = data.get("model", {})
     model_name = model.get("display_name", "")
+
+    # effort.level: 모델이 reasoning effort 를 지원할 때만 존재
+    effort_level = data.get("effort", {}).get("level")
+    model_label = f"{model_name} · {effort_level}" if effort_level else model_name
 
     # ── Rate Limits (5-hour block) ──
     rate_limits = data.get("rate_limits", {})
@@ -100,7 +104,13 @@ def format_statusline(data):
     ctx_pct = ctx.get("used_percentage")
     parts.append(f"📋 context {int(ctx_pct)}%" if ctx_pct is not None else "📋 context -")
 
-    parts.append(f"📊 usage {five_hour_pct:.1f}%" if five_hour_pct is not None else "📊 usage -")
+    parts.append(f"📊 5h {five_hour_pct:.1f}%" if five_hour_pct is not None else "📊 5h -")
+
+    # ── Rate Limits (7-day block) ──
+    seven_day = rate_limits.get("seven_day", {})
+    seven_day_pct = seven_day.get("used_percentage")
+    if seven_day_pct is not None:
+        parts.append(f"📅 7d {get_indicator(seven_day_pct)} {seven_day_pct:.1f}%")
 
     # ── Cost ──
     cost = data.get("cost", {})
@@ -115,7 +125,7 @@ def format_statusline(data):
     )
     dir_segment = build_dir_segment(cwd)
 
-    return f"{dir_segment}  [{model_name}]  " + " | ".join(parts)
+    return f"{dir_segment}  [{model_label}]  " + " | ".join(parts)
 
 
 def main():
