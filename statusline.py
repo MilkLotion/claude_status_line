@@ -136,8 +136,13 @@ def format_statusline(data):
     # ── Rate Limits (7-day block) ──
     seven_day = rate_limits.get("seven_day", {})
     seven_day_pct = seven_day.get("used_percentage")
+    seven_day_resets_at = seven_day.get("resets_at")
     if seven_day_pct is not None:
-        parts.append(f"📅 7d {get_indicator(seven_day_pct)} {seven_day_pct:.1f}%")
+        reset_str = ""
+        if seven_day_resets_at:
+            seven_day_reset_time = datetime.fromtimestamp(seven_day_resets_at)
+            reset_str = f"(~{seven_day_reset_time.strftime('%m/%d %H:%M')})"
+        parts.append(f"📅 7d{reset_str} {get_indicator(seven_day_pct)} {seven_day_pct:.1f}%")
 
     # ── Cost ──
     cost = data.get("cost", {})
