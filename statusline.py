@@ -51,6 +51,28 @@ def build_dir_segment(cwd):
     return f"{dir_name}{branch_str}"
 
 
+def get_usage_limit_segment(session_id):
+    """~/.claude/usage-limit.json 상태 표시 (usage-limit-detect/check 훅과 짝을 이루는 세션별 사용률 제한 기능)."""
+    limit_path = os.path.join(os.path.expanduser("~"), ".claude", "usage-limit.json")
+    try:
+        with open(limit_path, "r", encoding="utf-8") as f:
+            limit = json.load(f)
+    except Exception:
+        return None
+
+    if not limit.get("active"):
+        return None
+
+    threshold = limit.get("threshold")
+    limit_session = limit.get("session_id")
+
+    if not limit_session:
+        return f"🎯 제한 {threshold}% (전체 세션)"
+    if session_id and limit_session != session_id:
+        return f"🎯 제한 {threshold}% (다른 세션)"
+    return f"🎯 제한 {threshold}% (이 세션)"
+
+
 def format_statusline(data):
     """Build statusline from Claude Code's stdin JSON."""
     if not data:
@@ -106,6 +128,11 @@ def format_statusline(data):
 
     parts.append(f"📊 5h {five_hour_pct:.1f}%" if five_hour_pct is not None else "📊 5h -")
 
+    # ── 사용률 제한 훅 상태 ──
+    usage_limit_segment = get_usage_limit_segment(data.get("session_id"))
+    if usage_limit_segment:
+        parts.append(usage_limit_segment)
+
     # ── Rate Limits (7-day block) ──
     seven_day = rate_limits.get("seven_day", {})
     seven_day_pct = seven_day.get("used_percentage")
@@ -128,12 +155,32 @@ def format_statusline(data):
     return f"{dir_segment}  [{model_label}]  " + " | ".join(parts)
 
 
+def save_usage_snapshot(data):
+    """5시간 사용률 스냅샷을 기록 (usage-limit-check 후크가 소비)."""
+    if not data:
+        return
+    try:
+        rate_limits = data.get("rate_limits", {})
+        five_hour = rate_limits.get("five_hour", {})
+        snapshot = {
+            "five_hour_pct": five_hour.get("used_percentage"),
+            "resets_at": five_hour.get("resets_at"),
+            "timestamp": int(datetime.now().timestamp()),
+        }
+        snapshot_path = os.path.join(os.path.expanduser("~"), ".claude", "usage-snapshot.json")
+        with open(snapshot_path, "w", encoding="utf-8") as f:
+            json.dump(snapshot, f)
+    except Exception:
+        pass
+
+
 def main():
     try:
         data = json.load(sys.stdin)
     except (json.JSONDecodeError, EOFError):
         data = None
     print(format_statusline(data))
+    save_usage_snapshot(data)
 
 
 if __name__ == "__main__":
