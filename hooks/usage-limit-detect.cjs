@@ -6,6 +6,39 @@ const os = require("os");
 
 const LIMIT_FILE = path.join(os.homedir(), ".claude", "usage-limit.json");
 
+// ─── 유사어 사전 ───
+// "사용 제한", "사용률 제한", "세션 한도 제한" 등 사용자가 다양하게 표현해도 인식하도록
+// 두 그룹의 동의어를 조합해서 매칭한다: (무엇을 제한하는지 지칭하는 말) + (제한 그 자체를 뜻하는 말)
+const USAGE_TERMS = [
+  "세션",
+  "사용률",
+  "사용율",
+  "사용량",
+  "사용",
+  "쿼터",
+  "quota",
+  "usage",
+];
+const LIMIT_TERMS = ["제한", "한도", "캡", "cap", "리밋", "limit"];
+
+const USAGE_RE = USAGE_TERMS.join("|");
+const LIMIT_RE = LIMIT_TERMS.join("|");
+// 두 단어 사이 최대 12자까지 허용 — 예: "세션 한도 제한"의 "한도" 부분이 이 간격에 낌
+const GAP = "[^.!?\\n]{0,12}";
+
+const DISABLE_RE = new RegExp(
+  `(?:${USAGE_RE})${GAP}(?:${LIMIT_RE})\\s*(해제|끄|꺼|off|비활성|그만|중단)`,
+  "i",
+);
+const STATUS_RE = new RegExp(
+  `(?:${USAGE_RE})${GAP}(?:${LIMIT_RE})\\s*(확인|상태|얼마)`,
+  "i",
+);
+const ENABLE_RE = new RegExp(
+  `(?:${USAGE_RE})${GAP}(?:${LIMIT_RE})?\\s*(\\d+)\\s*%?`,
+  "i",
+);
+
 function emitContext(message) {
   process.stdout.write(
     JSON.stringify({
@@ -26,9 +59,7 @@ process.stdin.on("end", () => {
     const prompt = data.prompt || "";
     const sessionId = data.session_id || "";
 
-    const disableMatch = prompt.match(
-      /사용(?:률|율|량)\s*제한\s*(해제|끄|꺼|off|비활성|그만|중단)/i,
-    );
+    const disableMatch = prompt.match(DISABLE_RE);
     if (disableMatch) {
       if (fs.existsSync(LIMIT_FILE)) {
         const existing = JSON.parse(fs.readFileSync(LIMIT_FILE, "utf8"));
@@ -41,7 +72,7 @@ process.stdin.on("end", () => {
       return process.exit(0);
     }
 
-    const statusMatch = prompt.match(/사용(?:률|율|량)\s*제한\s*(확인|상태|얼마)/);
+    const statusMatch = prompt.match(STATUS_RE);
     if (statusMatch) {
       if (fs.existsSync(LIMIT_FILE)) {
         const existing = JSON.parse(fs.readFileSync(LIMIT_FILE, "utf8"));
@@ -61,7 +92,7 @@ process.stdin.on("end", () => {
       return process.exit(0);
     }
 
-    const enableMatch = prompt.match(/사용(?:률|율|량)\s*(?:제한)?\s*(\d+)\s*%?/);
+    const enableMatch = prompt.match(ENABLE_RE);
     if (enableMatch) {
       const threshold = parseInt(enableMatch[1], 10);
       if (threshold > 0 && threshold <= 100) {
