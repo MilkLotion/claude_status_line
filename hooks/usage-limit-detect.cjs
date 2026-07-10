@@ -44,6 +44,22 @@ const ENABLE_RE = new RegExp(
   "i",
 );
 
+// ─── 주입 메시지 마커 ───
+// Claude Code 가 user 역할로 자동 주입하는 메시지들(서브에이전트 완료 알림, 시스템 리마인더,
+// 슬래시 커맨드 출력 등). 이 중 하나라도 프롬프트에 있으면 "사용자가 직접 친 명령"이 아니므로
+// 훅을 통째로 건너뛴다.
+// 배경: <task-notification>(백그라운드 작업 완료 알림)이 UserPromptSubmit 훅을 똑같이 발동시켜,
+// 알림 본문(예: "…에서 사용", "캡처", "~2% CPU")이 ENABLE_RE 에 우연히 걸리면 사용자 의도 없이
+// 제한이 켜지는 오작동이 있었다.
+const INJECTED_MARKERS = [
+  "<task-notification",
+  "<system-reminder",
+  "<local-command-stdout",
+  "<command-name",
+  "<command-message",
+  "<command-args",
+];
+
 function emitContext(message) {
   process.stdout.write(
     JSON.stringify({
@@ -63,6 +79,11 @@ process.stdin.on("end", () => {
     const data = JSON.parse(input);
     const prompt = data.prompt || "";
     const sessionId = data.session_id || "";
+
+    // 사용자가 직접 친 명령에만 반응 — 자동 주입된 메시지는 무시
+    if (INJECTED_MARKERS.some((marker) => prompt.includes(marker))) {
+      return process.exit(0);
+    }
 
     const disableMatch = prompt.match(DISABLE_RE);
     if (disableMatch) {
